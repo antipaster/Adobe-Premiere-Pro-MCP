@@ -2,27 +2,28 @@
 
 Control Adobe Premiere Pro from Claude using the [Model Context Protocol](https://modelcontextprotocol.io). 170+ tools for editing, effects, captions, export, and more.
 
+![Claude Code controlling Premiere Pro via MCP](assets/NLSO0Nbfb0.png)
+
 ## How it works
 
 ```
 Claude ←→ MCP Server (Node.js) ←→ WebSocket ←→ CEP Panel ←→ ExtendScript ←→ Premiere Pro
 ```
 
-The MCP server runs as a Node.js process and communicates with a CEP (Common Extensibility Platform) panel inside Premiere Pro via WebSocket. The panel executes ExtendScript commands to control Premiere.
 
 ## Requirements
 
 - **Adobe Premiere Pro 2023+** (tested on 2026)
 - **Node.js 18+**
 - **Claude Desktop** or **Claude Code**
-- **Windows** (macOS support planned)
+- **Windows**
 
 ## Quick Start
 
 ### Automatic Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/premiere-pro-mcp.git
+git clone https://github.com/antipaster/premiere-pro-mcp.git
 cd premiere-pro-mcp
 install.bat
 ```
@@ -32,50 +33,6 @@ The installer will:
 2. Symlink the CEP panel into Premiere Pro's extensions folder
 3. Install dependencies and build
 4. Configure Claude Desktop and Claude Code
-
-### Manual Install
-
-```bash
-# 1. Clone and build
-git clone https://github.com/YOUR_USERNAME/premiere-pro-mcp.git
-cd premiere-pro-mcp
-npm install
-npm run build
-
-# 2. Enable CEP debug mode
-reg add "HKCU\Software\Adobe\CSXS.12" /v PlayerDebugMode /t REG_SZ /d 1 /f
-
-# 3. Symlink CEP panel
-mklink /D "%APPDATA%\Adobe\CEP\extensions\com.mcp.premiere.bridge" "%CD%\cep"
-
-# 4. Add to Claude Desktop config (%APPDATA%\Claude\claude_desktop_config.json)
-```
-
-```json
-{
-  "mcpServers": {
-    "premiere-pro": {
-      "command": "node",
-      "args": ["C:/path/to/premiere-pro-mcp/dist/server.js"]
-    }
-  }
-}
-```
-
-```bash
-# 5. For Claude Code, add to ~/.claude.json:
-```
-
-```json
-{
-  "mcpServers": {
-    "premiere-pro": {
-      "command": "node",
-      "args": ["C:/path/to/premiere-pro-mcp/dist/server.js"]
-    }
-  }
-}
-```
 
 ### Connect
 
@@ -106,7 +63,6 @@ Edit `config.json` in the project root:
 | `elevenlabs.default_voice_id` | Default voice (Rachel) | `21m00Tcm4TlvDq8ikWAM` |
 | `elevenlabs.default_model` | TTS model | `eleven_multilingual_v2` |
 
-Environment variables `PPRO_MCP_PORT` and `ELEVENLABS_API_KEY` override config.json values.
 
 ## Tools (170+)
 
@@ -193,25 +149,6 @@ premiere-pro-mcp/
 └── tsconfig.json
 ```
 
-## Troubleshooting
-
-### CEP panel shows "Disconnected"
-- Make sure the MCP server is running (Claude starts it automatically)
-- Check that port 8097 is not in use: `netstat -an | findstr 8097`
-- Try changing the port in `config.json`
-
-### "EvalScript error" on all commands
-- Close and reopen the MCP Bridge panel (Window > Extensions > MCP Bridge)
-- The ExtendScript engine needs a moment to initialize on Premiere Pro 2025+
-
-### MCP server not showing in Claude
-- Run `install.bat` or manually add the config
-- Claude Desktop: `%APPDATA%\Claude\claude_desktop_config.json`
-- Claude Code: `%USERPROFILE%\.claude.json`
-
-### CEP panel not appearing in Extensions menu
-- Make sure CEP debug mode is enabled: `reg query "HKCU\Software\Adobe\CSXS.12" /v PlayerDebugMode`
-- Restart Premiere Pro after enabling debug mode
 
 ## License
 
