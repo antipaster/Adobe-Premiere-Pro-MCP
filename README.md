@@ -23,8 +23,8 @@ Claude ←→ MCP Server (Node.js) ←→ WebSocket ←→ CEP Panel ←→ Exte
 ### Automatic Install
 
 ```bash
-git clone https://github.com/antipaster/premiere-pro-mcp.git
-cd premiere-pro-mcp
+git clone https://github.com/antipaster/Adobe-Premiere-Pro-MCP.git
+cd Adobe-Premiere-Pro-MCP
 install.bat
 ```
 
