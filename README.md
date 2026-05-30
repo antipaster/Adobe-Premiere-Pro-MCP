@@ -1,13 +1,13 @@
 # Premiere Pro MCP Server
 
-Control Adobe Premiere Pro from Claude using the [Model Context Protocol](https://modelcontextprotocol.io). 170+ tools for editing, effects, captions, export, and more.
+Control Adobe Premiere Pro from Claude/Codex using the [Model Context Protocol](https://modelcontextprotocol.io). 170+ tools for editing, effects, captions, export, and more.
 
 ![Claude Code controlling Premiere Pro via MCP](assets/demo.png)
 
 ## How it works
 
 ```
-Claude ←→ MCP Server (Node.js) ←→ WebSocket ←→ CEP Panel ←→ ExtendScript ←→ Premiere Pro
+LLM ←→ MCP Server (Node.js) ←→ WebSocket ←→ CEP Panel ←→ ExtendScript ←→ Premiere Pro
 ```
 
 
@@ -15,7 +15,7 @@ Claude ←→ MCP Server (Node.js) ←→ WebSocket ←→ CEP Panel ←→ Exte
 
 - **Adobe Premiere Pro 2023+** (tested on 2026)
 - **Node.js 18+**
-- **Claude Desktop** or **Claude Code**
+- **Claude Desktop/Code** or **Codex**
 - **Windows**
 
 ## Quick Start
@@ -32,14 +32,14 @@ The installer will:
 1. Enable unsigned CEP extensions (debug mode)
 2. Symlink the CEP panel into Premiere Pro's extensions folder
 3. Install dependencies and build
-4. Configure Claude Desktop and Claude Code
+4. Configure Claude Desktop and Claude Code or Codex
 
 ### Connect
 
 1. Open Premiere Pro
 2. Go to **Window > Extensions > MCP Bridge**
 3. The panel should show **"Connected"**
-4. Start Claude and use Premiere Pro tools
+4. Start Claude/Codex and use Premiere Pro tools
 
 ## Configuration
 
