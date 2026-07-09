@@ -7,15 +7,20 @@ reg add "HKCU\Software\Adobe\CSXS.11" /v PlayerDebugMode /t REG_SZ /d 1 /f
 reg add "HKCU\Software\Adobe\CSXS.12" /v PlayerDebugMode /t REG_SZ /d 1 /f
 echo [OK] Enabled CEP debug mode
 
-REM Create symlink for CEP extension
+REM Create junction for CEP extension (works without admin/Developer Mode, unlike /D symlinks)
 set CEP_DIR=%APPDATA%\Adobe\CEP\extensions\com.mcp.premiere.bridge
+if not exist "%APPDATA%\Adobe\CEP\extensions" mkdir "%APPDATA%\Adobe\CEP\extensions"
 if exist "%CEP_DIR%" (
   rmdir "%CEP_DIR%"
-  echo [OK] Removed existing extension symlink
+  echo [OK] Removed existing extension link
 )
 
-mklink /D "%CEP_DIR%" "%~dp0cep"
-echo [OK] Created extension symlink at %CEP_DIR%
+mklink /J "%CEP_DIR%" "%~dp0cep"
+if errorlevel 1 (
+  echo [FAIL] Could not create extension link at %CEP_DIR%
+) else (
+  echo [OK] Created extension link at %CEP_DIR%
+)
 
 REM Create config.json from example if it doesn't exist
 if not exist "%~dp0config.json" (
