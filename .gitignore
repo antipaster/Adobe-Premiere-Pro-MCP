@@ -7,3 +7,8 @@ Thumbs.db
 .claude/
 PREMIERE_PRO_API_REFERENCE.txt
 config.json
+
+# Guard against the recursive CEP junction artifact produced by the old
+# install.bat bug (fa9f00e): it could create an infinitely nested
+# cep/cep/cep/... tree in the working copy. Never let that get committed.
+cep/cep/
