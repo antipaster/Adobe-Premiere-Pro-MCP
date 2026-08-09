@@ -1,3 +1,5 @@
+
+
 # Premiere Pro MCP Server
 
 Control Adobe Premiere Pro from Claude/Codex using the [Model Context Protocol](https://modelcontextprotocol.io). 170+ tools for editing, effects, captions, export, and more.
@@ -72,8 +74,8 @@ Copy `config.example.json` to `config.json` and edit:
 ### Sequence (23 tools)
 `create_sequence` `create_sequence_from_clip` `clone_sequence` `delete_sequence` `set_active_sequence` `get_active_sequence` `get_sequences` `get_sequence_settings` `add_tracks` `remove_track` `rename_track` `get_track_info` `set_track_locked` `set_track_muted` `create_subsequence` `nest_clips` `auto_reframe_sequence` `scene_edit_detection` `set_sequence_in_out` `clear_sequence_in_out` `get_work_area` `set_work_area` `deselect_all`
 
-### Timeline (25 tools)
-`add_clip_to_timeline` `overwrite_clip_to_timeline` `remove_clip` `move_clip_to_track` `set_clip_position` `set_clip_in_out` `set_clip_speed` `razor_clip` `razor_all_tracks` `ripple_delete` `enable_disable_clip` `set_timeline_clip_label` `rename_clip` `link_clips` `unlink_clip` `duplicate_clip` `freeze_frame` `slip_clip` `slide_clip` `set_clip_mute` `get_clip_info` `get_clip_speed` `get_selection` `select_clips` `set_scale_to_frame_size`
+### Timeline (24 tools)
+`add_clip_to_timeline` `overwrite_clip_to_timeline` `remove_clip` `move_clip_to_track` `set_clip_position` `set_clip_in_out` `set_clip_speed` `razor_clip` `razor_all_tracks` `ripple_delete` `enable_disable_clip` `set_timeline_clip_label` `rename_clip` `link_clips` `unlink_clip` `duplicate_clip` `freeze_frame` `slip_clip` `slide_clip` `get_clip_info` `get_clip_speed` `get_selection` `select_clips` `set_scale_to_frame_size`
 
 ### Effects (19 tools)
 `apply_effect` `remove_effect` `get_clip_effects` `set_effect_enabled` `get_effect_property` `set_effect_property` `get_video_effects_list` `get_audio_effects_list` `apply_transition` `remove_transition` `get_video_transitions_list` `get_audio_transitions_list` `set_default_transition` `add_keyframe` `remove_keyframe` `get_keyframes` `set_keyframe_interpolation` `get_clip_transform` `set_clip_transform`
