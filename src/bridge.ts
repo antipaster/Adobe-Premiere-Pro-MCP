@@ -8,57 +8,69 @@ let cepSocket: WebSocket | null = null;
 let pendingRequests = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void }>();
 let requestId = 0;
 
-const wss = new WebSocketServer({ port: WS_PORT });
+const REBIND_MS = 3000;
 
-// Don't let a port conflict crash the whole MCP process.
-// Every Claude window spawns its own `node server.js`, but only one can bind
-// WS_PORT for the Premiere CEP bridge. Without this handler the WebSocketServer
-// emits an unhandled "error" (EADDRINUSE) that kills the process, so the MCP
-// stdio transport dies and the client shows "Server disconnected / failed".
-wss.on("error", (err: NodeJS.ErrnoException) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(
-      `[Bridge] Port ${WS_PORT} is already in use — another MCP instance owns the ` +
-        `Premiere bridge. This instance stays up but cannot reach Premiere ` +
-        `(tool calls will report "Premiere Pro is not connected").`
-    );
-  } else {
-    console.error("[Bridge] WebSocket server error:", err);
-  }
-});
+function attachHandlers(server: WebSocketServer) {
+  server.on("connection", (ws) => {
+    console.error(`[Bridge] CEP panel connected`);
+    cepSocket = ws;
 
-wss.on("connection", (ws) => {
-  console.error(`[Bridge] CEP panel connected`);
-  cepSocket = ws;
-
-  ws.on("message", (data) => {
-    try {
-      const msg = JSON.parse(data.toString());
-      const pending = pendingRequests.get(msg.id);
-      if (pending) {
-        pendingRequests.delete(msg.id);
-        if (msg.error) {
-          pending.reject(new Error(msg.error));
-        } else {
-          pending.resolve(msg.result);
+    ws.on("message", (data) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        const pending = pendingRequests.get(msg.id);
+        if (pending) {
+          pendingRequests.delete(msg.id);
+          if (msg.error) {
+            pending.reject(new Error(msg.error));
+          } else {
+            pending.resolve(msg.result);
+          }
         }
+      } catch (e) {
+        console.error("[Bridge] Failed to parse message:", e);
       }
-    } catch (e) {
-      console.error("[Bridge] Failed to parse message:", e);
+    });
+
+    ws.on("close", () => {
+      console.error("[Bridge] CEP panel disconnected");
+      cepSocket = null;
+      for (const [id, pending] of pendingRequests) {
+        pending.reject(new Error("CEP panel disconnected"));
+        pendingRequests.delete(id);
+      }
+    });
+  });
+}
+
+// Every Claude window spawns its own `node server.js`, but only one can bind
+// WS_PORT for the Premiere CEP bridge. A loser must NOT give up permanently:
+// whichever instance holds the port may exit at any time (window closed, session
+// restarted), and without a retry every surviving instance stays useless for the
+// rest of its life, reporting "Premiere Pro is not connected" forever.
+function bind() {
+  const server = new WebSocketServer({ port: WS_PORT });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      // Another instance owns the bridge. Retry until it releases the port.
+      try {
+        server.close();
+      } catch {}
+      setTimeout(bind, REBIND_MS);
+    } else {
+      console.error("[Bridge] WebSocket server error:", err);
     }
   });
 
-  ws.on("close", () => {
-    console.error("[Bridge] CEP panel disconnected");
-    cepSocket = null;
-    for (const [id, pending] of pendingRequests) {
-      pending.reject(new Error("CEP panel disconnected"));
-      pendingRequests.delete(id);
-    }
+  server.on("listening", () => {
+    console.error(`[Bridge] WebSocket server listening on port ${WS_PORT}`);
   });
-});
 
-console.error(`[Bridge] WebSocket server listening on port ${WS_PORT}`);
+  attachHandlers(server);
+}
+
+bind();
 
 export function isConnected(): boolean {
   return cepSocket !== null && cepSocket.readyState === WebSocket.OPEN;
