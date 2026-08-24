@@ -124,6 +124,12 @@ function loadJSX() {
     }
 
     var modules = [
+      // json2-polyfill first: later modules use JSON. Loaded here rather than
+      // from premiere.jsx because $.fileName is empty on Premiere 26.3.2 arm64,
+      // so only the panel can supply an absolute path. Harmless when the host
+      // already has a native JSON (26.3.2 does) -- json2 defines only what is
+      // missing.
+      "json2-polyfill",
       "utils", "project", "sequence", "timeline", "effects",
       "markers", "audio", "export", "metadata", "captions",
       "graphics", "playback"
