@@ -1,5 +1,7 @@
 /* MCP Bridge - WebSocket client that bridges MCP server to ExtendScript */
 
+var PANEL_BUILD = "cep-bridge-1";
+
 var cs = new CSInterface();
 var ws = null;
 var WS_PORT = 8097;
@@ -17,33 +19,55 @@ function setStatus(text, className) {
   el.className = className;
 }
 
+var reconnectTimer = null;
+
+function scheduleReconnect() {
+  // Only ever one retry pending. Without this guard each close starts its own
+  // retry chain, and every chain's connect() tears down the live socket.
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(function () {
+    reconnectTimer = null;
+    connect();
+  }, 3000);
+}
+
 function connect() {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.close();
+  // Already connected or mid-handshake -- leave the socket alone.
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    return;
   }
 
   setStatus("Connecting...", "connecting");
   log("Connecting to MCP server on port " + WS_PORT + "...");
 
-  ws = new WebSocket("ws://localhost:" + WS_PORT);
+  var socket = new WebSocket("ws://localhost:" + WS_PORT);
+  ws = socket;
 
-  ws.onopen = function () {
+  socket.onopen = function () {
+    if (ws !== socket) return;
     setStatus("Connected", "connected");
     log("Connected to MCP server");
   };
 
-  ws.onclose = function () {
+  socket.onclose = function () {
+    // Ignore a socket that has already been superseded.
+    if (ws !== socket) return;
     setStatus("Disconnected", "disconnected");
     log("Disconnected from MCP server");
-    // Auto-reconnect after 3 seconds
-    setTimeout(connect, 3000);
+    scheduleReconnect();
   };
 
-  ws.onerror = function (err) {
+  socket.onerror = function (err) {
+    if (ws !== socket) return;
     log("WebSocket error");
+    // A refused connection may fire onerror WITHOUT a following onclose, which
+    // would otherwise strand the panel with no retry pending. scheduleReconnect
+    // is idempotent, so an onclose arriving afterwards costs nothing.
+    setStatus("Disconnected", "disconnected");
+    scheduleReconnect();
   };
 
-  ws.onmessage = function (event) {
+  socket.onmessage = function (event) {
     try {
       var msg = JSON.parse(event.data);
       log("← " + msg.functionName + " (id: " + msg.id + ")");
@@ -107,6 +131,8 @@ function sendResponse(id, result) {
 }
 
 // Load JSX modules on startup
+var jsxLoaded = false;
+
 function loadJSX() {
   var extPath = cs.getSystemPath(SystemPath.EXTENSION);
   var jsxPath = extPath + "/jsx";
@@ -124,6 +150,12 @@ function loadJSX() {
     }
 
     var modules = [
+      // json2-polyfill first: later modules use JSON. Loaded here rather than
+      // from premiere.jsx because $.fileName is empty on Premiere 26.3.2 arm64,
+      // so only the panel can supply an absolute path. Harmless when the host
+      // already has a native JSON (26.3.2 does) -- json2 defines only what is
+      // missing.
+      "json2-polyfill",
       "utils", "project", "sequence", "timeline", "effects",
       "markers", "audio", "export", "metadata", "captions",
       "graphics", "playback"
@@ -134,7 +166,10 @@ function loadJSX() {
     function loadNext() {
       if (idx >= modules.length) {
         log("All JSX modules loaded");
-        connect();
+        if (!jsxLoaded) {
+          jsxLoaded = true;
+          connect();
+        }
         return;
       }
       var mod = modules[idx];
@@ -154,4 +189,13 @@ function loadJSX() {
 }
 
 // Start - small delay to let ExtendScript engine initialize
+log("panel build: " + PANEL_BUILD);
 setTimeout(loadJSX, 1000);
+
+// Watchdog: the MCP server only listens while a Claude session owns it, so the
+// panel must survive arbitrarily long stretches with nothing on the port.
+// connect() returns early when the socket is OPEN or CONNECTING, so polling it
+// is cheap and cannot disturb a healthy connection.
+// Not gated on jsxLoaded: the socket does not depend on the ExtendScript engine,
+// and gating it means a stalled engine leaves the panel dark forever.
+setInterval(connect, 5000);
